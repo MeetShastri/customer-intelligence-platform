@@ -1,0 +1,170 @@
+[
+  {
+    "ticketId": "T001",
+    "issue": "Customer cannot reset password",
+    "resolution": "Asked customer to use forgot password flow and reset email link",
+    "priority": "LOW"
+  },
+  {
+    "ticketId": "T002",
+    "issue": "Customer charged twice for subscription",
+    "resolution": "Refunded duplicate payment and escalated billing review",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T003",
+    "issue": "Mobile app crashes on login",
+    "resolution": "Suggested clearing app cache and updating app version",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T004",
+    "issue": "Payment failed during checkout",
+    "resolution": "Verified payment gateway issue and advised retry after 10 minutes",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T005",
+    "issue": "User not receiving verification email",
+    "resolution": "Whitelisted support email domain and resent verification email",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T006",
+    "issue": "Subscription cancellation not reflecting",
+    "resolution": "Manually updated subscription status and confirmed cancellation",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T007",
+    "issue": "Fraudulent transaction reported on account",
+    "resolution": "Temporarily locked account and escalated to fraud investigation team",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T008",
+    "issue": "Customer unable to login after password reset",
+    "resolution": "Cleared old authentication sessions and guided user to login again",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T009",
+    "issue": "App freezes on payment screen",
+    "resolution": "Collected device logs and suggested updating to latest app version",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T010",
+    "issue": "Incorrect billing amount charged",
+    "resolution": "Adjusted invoice and processed partial refund",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T011",
+    "issue": "Customer not receiving password reset link",
+    "resolution": "Checked spam folder issue and resent reset email",
+    "priority": "LOW"
+  },
+  {
+    "ticketId": "T012",
+    "issue": "Premium subscription features not activated",
+    "resolution": "Synced subscription data and refreshed account permissions",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T013",
+    "issue": "Payment successful but order not confirmed",
+    "resolution": "Verified payment receipt and manually created order entry",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T014",
+    "issue": "User account flagged for suspicious login activity",
+    "resolution": "Forced password reset and enabled two-factor authentication",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T015",
+    "issue": "Application crashes when uploading profile picture",
+    "resolution": "Suggested reducing image size and fixed upload timeout issue",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T016",
+    "issue": "Customer unable to update payment method",
+    "resolution": "Resolved card tokenization issue and retried update process",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T017",
+    "issue": "Email notifications stopped working",
+    "resolution": "Re-enabled notification preferences and tested email delivery",
+    "priority": "LOW"
+  },
+  {
+    "ticketId": "T018",
+    "issue": "Subscription renewed despite cancellation request",
+    "resolution": "Issued refund and corrected auto-renewal settings",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T019",
+    "issue": "Customer reports unauthorized account access",
+    "resolution": "Logged out all active sessions and escalated security review",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T020",
+    "issue": "Login OTP not received on mobile",
+    "resolution": "Verified SMS gateway issue and provided backup email OTP option",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T021",
+    "issue": "Customer reported that their account gets automatically logged out every few minutes while using the web dashboard, especially when switching between billing and analytics pages.",
+    "resolution": "Investigated session timeout logs and identified an issue with expired authentication tokens not refreshing correctly. Applied a temporary backend fix, cleared invalid sessions for the customer, and advised them to log in again after clearing browser cookies and cache.",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T022",
+    "issue": "Customer noticed multiple failed payment attempts on their bank statement even though the subscription purchase was completed successfully on the platform.",
+    "resolution": "Verified transaction records with the payment gateway and confirmed duplicate authorization attempts caused by a timeout during checkout. Assured the customer that failed authorization holds would automatically reverse within 5\u20137 business days and escalated the issue to the payments engineering team for monitoring.",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T023",
+    "issue": "Mobile application crashes immediately after enabling biometric authentication on Android devices running older operating system versions.",
+    "resolution": "Collected crash reports and identified incompatibility with specific biometric APIs on Android 10 devices. Suggested disabling biometric login temporarily, provided steps for manual login access, and included the issue in the upcoming mobile patch release.",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T024",
+    "issue": "Customer reported receiving subscription renewal reminder emails even after permanently deleting their account from the platform two weeks earlier.",
+    "resolution": "Reviewed account deletion workflow and discovered delayed cleanup jobs were not removing users from the marketing notification queue. Manually removed the customer from all email campaigns, confirmed account deletion completion, and escalated the cleanup automation issue to the infrastructure team.",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T025",
+    "issue": "A business customer reported that invoice PDFs downloaded from the billing portal were showing incorrect tax calculations for international transactions.",
+    "resolution": "Compared invoice generation logs with tax service responses and identified a currency conversion mismatch affecting VAT calculations. Regenerated corrected invoices, emailed updated copies to the customer, and deployed a fix to ensure accurate regional tax handling moving forward.",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T026",
+    "issue": "Customer claimed their loyalty reward points disappeared after upgrading from a monthly subscription plan to an annual enterprise plan.",
+    "resolution": "Reviewed account migration history and found that reward balances were not properly transferred during subscription upgrades. Restored the missing loyalty points manually, confirmed balance visibility on the customer dashboard, and created an internal bug report for the subscription migration workflow.",
+    "priority": "MEDIUM"
+  },
+  {
+    "ticketId": "T027",
+    "issue": "Several users from the same organization reported suspicious login attempts from unknown international IP addresses and were concerned about a possible credential leak.",
+    "resolution": "Performed a security audit on affected accounts and confirmed that credentials were likely compromised through password reuse on external websites. Forced password resets for all impacted users, enabled mandatory two-factor authentication for the organization, and shared security best practices with the customer\u2019s IT administrator.",
+    "priority": "HIGH"
+  },
+  {
+    "ticketId": "T028",
+    "issue": "Customer reported that uploaded documents intermittently disappear from the dashboard after refreshing the page, although upload success notifications were displayed.",
+    "resolution": "Investigated file storage synchronization logs and identified delayed indexing between the upload service and dashboard cache layer. Reprocessed missing documents, verified successful visibility in the customer account, and deployed additional monitoring to prevent future synchronization delays.",
+    "priority": "MEDIUM"
+  }
+]
