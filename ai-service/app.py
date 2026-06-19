@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import json
 from routes.ticket_routes import router as ticket_router
 from graph.workflow_graph import graph
 
@@ -26,3 +28,19 @@ async def run_workflow(payload: dict):
     })
 
     return result
+
+@app.post("/api/v1/run-workflow/stream")
+async def run_workflow_stream(payload: dict):
+    async def event_generator():
+        initial_state = {
+            "ticket": payload["ticket"],
+            "urgency": "",
+            "retrieved_context": [],
+            "draft_reply": "",
+            "decision": "",
+            "logs": []
+        }
+        async for chunk in graph.astream(initial_state):
+            yield json.dumps(chunk) + "\n"
+
+    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
