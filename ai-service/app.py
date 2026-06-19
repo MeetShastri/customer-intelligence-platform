@@ -1,10 +1,20 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 import json
 from routes.ticket_routes import router as ticket_router
 from graph.workflow_graph import graph
 
 app = FastAPI(title="Customer Intelligence Platform AI Service")
+
+# Enable CORS for frontend health checks and requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include the external routers
 app.include_router(ticket_router, prefix="/api/v1/tickets")
