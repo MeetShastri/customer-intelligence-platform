@@ -15,7 +15,7 @@ async def health():
 
 @app.post("/api/v1/run-workflow")
 async def run_workflow(payload: dict):
-
+    print('we are inside the ai-service')
     result = await graph.ainvoke({
         "ticket": payload["ticket"],
         "urgency": "",

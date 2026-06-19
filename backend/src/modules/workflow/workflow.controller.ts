@@ -1,15 +1,23 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+} from '@nestjs/common';
+
 import { WorkflowService } from './workflow.service';
 
 @Controller('workflow')
 export class WorkflowController {
-
   constructor(
     private readonly workflowService: WorkflowService,
-  ) { }
+  ) {}
 
-  @Get('test-ai')
-  async testAI() {
-    return this.workflowService.testAIService();
+  @Post('run')
+  async runWorkflow(
+    @Body() body: { ticket: string },
+  ) {
+    return this.workflowService.runWorkflow(
+      body.ticket,
+    );
   }
 }
