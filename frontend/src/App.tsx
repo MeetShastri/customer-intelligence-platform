@@ -8,6 +8,7 @@ import TicketPanel from "./components/TicketPanel";
 import AgentGraph from "./components/AgentGraph";
 import Timeline from "./components/Timeline";
 import TabsArea from "./components/TabsArea";
+import Login from "./components/Login";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
@@ -25,6 +26,7 @@ interface WorkflowResult {
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -90,6 +92,10 @@ export default function App() {
       setLoading(false);
     }
   };
+
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="relative min-h-screen bg-[#030712] overflow-x-hidden select-none">
