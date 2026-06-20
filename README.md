@@ -170,3 +170,33 @@ redis-cli ping
 
 * **Process Isolation**: In production, set `START_WORKER=false` in the environment variables of your API web instances (so they only ingest requests and trigger socket broadcasts without executing workers). Run standalone worker nodes running `npm run worker:prod` on separate server instances to scale work capacity independently.
 * **WebSocket Rooms**: Rather than broadcasting progress to all connected clients, clients subscribe to rooms corresponding to the unique `jobId` (`socket.emit("join", jobId)`). Progress reports are targeted only to the client watching the ticket, significantly reducing network traffic.
+
+---
+
+## 🆕 Recent Updates & Enhancements
+
+We have rolled out several premium updates to improve visibility, usability, and visual feedback:
+
+1. **Queue Status Badge**:
+   * Displays the actual BullMQ queue status (`Queued`, `Running`, `Completed`, `Failed`) dynamically queried from Redis via the NestJS API.
+   * Features a pulsing bullet indicator near the run button.
+   * State is persisted across page refreshes via `localStorage` and synced via active polling.
+
+2. **System Architecture Drawer**:
+   * Added a glassmorphic, slide-out drawer accessible by clicking the animated CPU icon in the header.
+   * Graphically demonstrates the system stack layers: `React` ➔ `Socket.io` ➔ `NestJS` ➔ `BullMQ` ➔ `Redis` ➔ `Worker` ➔ `FastAPI` ➔ `LangGraph` ➔ `MCP` ➔ `Pinecone`.
+
+3. **AI Confidence & Risk Metrics**:
+   * Integrated into the **Supervisor Decision** panel.
+   * Computes a dynamic `Confidence %` and `Risk Level` (`Low` / `Medium` / `High`) based on classification urgency, routing logic, and historical retrieval match scores.
+
+4. **Dashboard Onboarding (Empty State)**:
+   * Prior to the first ticket submission, the center graph is replaced with a custom onboarding card: *"Submit a support ticket to watch AI agents collaborate in real time."*
+   * Includes floating animations and pulsing indicator lights.
+
+5. **Expanded Preset Templates**:
+   * Expanded presets list to 8 common support tickets: *Login Lockout, Double Charged, Account Compromised, Email Not Received, Subscription Cancellation, Invoice Missing, Payment Failed,* and *Data Export Request*.
+   * Placed inside a scrollable container to preserve the main container height.
+
+6. **Agent Execution Pace Tuning**:
+   * Added a 1.5-second delay to each agent step (`classify`, `retrieval`, `draft`, `supervisor`) in the python `ai-service` to allow observers to follow graph animations and terminal logs step-by-step.
