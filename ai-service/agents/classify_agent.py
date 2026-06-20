@@ -1,8 +1,10 @@
 import time
+import asyncio
 from graph.state import GraphState
 
 async def classify_agent(state: GraphState):
     start_time = time.perf_counter()
+    await asyncio.sleep(1.5)
     if "timings" not in state or state["timings"] is None:
         state["timings"] = {}
 

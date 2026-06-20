@@ -21,6 +21,26 @@ const presets = [
     title: "Account Compromised",
     text: "URGENT: I received an email saying my login details were updated, but I didn't make this change. I think my account has been hacked and I need immediate lockout assistance.",
   },
+  {
+    title: "Email Not Received",
+    text: "I signed up for your service an hour ago but I haven't received the activation email or password reset link. I checked my spam folder and nothing is there. Please help.",
+  },
+  {
+    title: "Subscription Cancellation",
+    text: "I would like to cancel my premium subscription before the next billing cycle starts on the 25th of this month. Please confirm my account will not be charged again.",
+  },
+  {
+    title: "Invoice Missing",
+    text: "I need the tax invoice for my last renewal payment on June 15th. It is not showing up in my account billing history. Can you please email it to me?",
+  },
+  {
+    title: "Payment Failed",
+    text: "I tried to renew my plan, but my payment kept failing with error code 402. I verified my card has sufficient funds and is active. Please look into this issue.",
+  },
+  {
+    title: "Data Export Request",
+    text: "Under GDPR regulations, I would like to request a full export of all my personal data stored in your system. Please let me know how to download the archive.",
+  },
 ];
 
 export default function TicketPanel({ onSubmit, loading, currentStep, queueStatus }: TicketPanelProps) {
@@ -66,13 +86,13 @@ export default function TicketPanel({ onSubmit, loading, currentStep, queueStatu
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
             Try a Preset Template
           </span>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-h-[190px] overflow-y-auto pr-1">
             {presets.map((preset) => (
               <button
                 key={preset.title}
                 type="button"
                 onClick={() => !loading && setText(preset.text)}
-                className={`text-left text-xs p-3 rounded-lg border border-white/5 transition-all ${
+                className={`text-left text-xs p-3 rounded-lg border border-white/5 transition-all flex-shrink-0 ${
                   loading
                     ? "opacity-50 cursor-not-allowed"
                     : text === preset.text
@@ -89,7 +109,7 @@ export default function TicketPanel({ onSubmit, loading, currentStep, queueStatu
         </div>
 
         <div className="mt-auto">
-          {queueStatus && (
+          {currentStep && queueStatus && (
             <div className="flex items-center justify-end gap-1.5 text-xs text-gray-400 mb-2 px-1">
               <span className="text-[11px] text-gray-500 font-medium">Queue Status:</span>
               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide uppercase ${

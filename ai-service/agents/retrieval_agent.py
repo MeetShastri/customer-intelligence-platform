@@ -1,4 +1,5 @@
 import time
+import asyncio
 from graph.state import GraphState
 
 from mcp_server.tools.pinecone_search_tool import (
@@ -7,6 +8,7 @@ from mcp_server.tools.pinecone_search_tool import (
 
 async def retrieval_agent(state: GraphState):
     start_time = time.perf_counter()
+    await asyncio.sleep(1.5)
     if "timings" not in state or state["timings"] is None:
         state["timings"] = {}
 

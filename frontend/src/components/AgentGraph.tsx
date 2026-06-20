@@ -257,23 +257,54 @@ export default function AgentGraph({ currentStep, timings }: AgentGraphProps) {
 
       {/* React Flow Container */}
       <div className="w-full h-[450px] relative flex-grow">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-          zoomOnScroll={false}
-          zoomOnPinch={false}
-          zoomOnDoubleClick={false}
-          panOnDrag={false}
-          panOnScroll={false}
-          fitView
-          fitViewOptions={{ padding: 0.05 }}
-        >
-          <Background color="rgba(255,255,255,0.03)" gap={20} size={1} />
-        </ReactFlow>
+        {currentStep ? (
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={false}
+            zoomOnScroll={false}
+            zoomOnPinch={false}
+            zoomOnDoubleClick={false}
+            panOnDrag={false}
+            panOnScroll={false}
+            fitView
+            fitViewOptions={{ padding: 0.05 }}
+          >
+            <Background color="rgba(255,255,255,0.03)" gap={20} size={1} />
+          </ReactFlow>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-black/20 border border-dashed border-white/5 rounded-xl"
+          >
+            <motion.div
+              animate={{ 
+                y: [0, -6, 0],
+              }}
+              transition={{ 
+                duration: 3, 
+                repeat: Infinity, 
+                ease: "easeInOut" 
+              }}
+              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-600/10 border border-purple-500/20 text-purple-400 mb-5"
+            >
+              <Cpu className="h-8 w-8" />
+            </motion.div>
+            <h3 className="text-sm font-semibold text-gray-300 leading-relaxed max-w-xs">
+              Submit a support ticket to watch AI agents collaborate in real time.
+            </h3>
+            <div className="flex gap-1.5 mt-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-purple-500/60 animate-pulse" />
+              <span className="h-1.5 w-1.5 rounded-full bg-purple-500/60 animate-pulse delay-75" />
+              <span className="h-1.5 w-1.5 rounded-full bg-purple-500/60 animate-pulse delay-150" />
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Execution Timings Panel */}

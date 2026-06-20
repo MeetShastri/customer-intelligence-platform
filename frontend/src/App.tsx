@@ -5,6 +5,7 @@ import axios from "axios";
 import ParticleBackground from "./components/ParticleBackground";
 import Header from "./components/Header";
 import TicketPanel from "./components/TicketPanel";
+import ArchitectureDrawer from "./components/ArchitectureDrawer";
 import AgentGraph from "./components/AgentGraph";
 import Timeline from "./components/Timeline";
 import TabsArea from "./components/TabsArea";
@@ -35,6 +36,7 @@ interface WorkflowResult {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(() => {
     const status = localStorage.getItem("cip-workflow-queue-status");
     return status === "Queued" || status === "Running";
@@ -249,7 +251,7 @@ export default function App() {
       <ParticleBackground />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-screen">
-        <Header />
+        <Header onOpenDrawer={() => setIsDrawerOpen(true)} />
 
         <MetricsCards metrics={metrics} />
 
@@ -281,6 +283,7 @@ export default function App() {
           <TabsArea result={result} rawJson={rawJson} />
         </div>
       </div>
+      <ArchitectureDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
     </div>
   );
 }

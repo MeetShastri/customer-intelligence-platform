@@ -117,6 +117,54 @@ export default function TabsArea({ result, rawJson }: TabsAreaProps) {
       case "supervisor":
         const isAutoSend = result.decision === "AUTO_SEND";
         const friendlyDecision = isAutoSend ? "Auto Send" : result.decision === "HUMAN_REVIEW" ? "Human Review" : result.decision;
+        
+        // Calculate confidence and risk metrics dynamically from result
+        const getConfidenceMetrics = () => {
+          const urgency = (result.urgency || "low").toLowerCase();
+          
+          let maxScore = 0;
+          if (result.retrieved_context && result.retrieved_context.length > 0) {
+            maxScore = Math.max(...result.retrieved_context.map((c: any) => c.score || 0));
+          }
+
+          let confidence = 85;
+          let riskLevel = "Low";
+
+          if (isAutoSend) {
+            if (maxScore > 0) {
+              confidence = Math.round(maxScore * 100);
+            } else {
+              confidence = 75;
+            }
+            
+            if (urgency === "high") {
+              riskLevel = "High";
+              confidence = Math.min(confidence, 65);
+            } else if (urgency === "medium") {
+              riskLevel = "Medium";
+              confidence = Math.min(confidence, 80);
+            } else {
+              riskLevel = "Low";
+            }
+          } else {
+            if (urgency === "high") {
+              confidence = 95;
+              riskLevel = "High";
+            } else if (maxScore < 0.6) {
+              confidence = 90;
+              riskLevel = "Low";
+            } else {
+              confidence = 85;
+              riskLevel = "Medium";
+            }
+          }
+
+          confidence = Math.max(50, Math.min(99, confidence));
+          return { confidence, riskLevel };
+        };
+
+        const { confidence, riskLevel } = getConfidenceMetrics();
+
         return (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -127,15 +175,39 @@ export default function TabsArea({ result, rawJson }: TabsAreaProps) {
               Routing Logic Evaluation
             </span>
 
-            <div
-              className={`inline-flex items-center gap-2 px-8 py-3 rounded-full border text-lg font-bold shadow-lg mb-6 transition-colors ${
-                isAutoSend
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/5"
-                  : "bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-amber-500/5"
-              }`}
-            >
-              <UserCheck className="h-5 w-5 animate-pulse" />
-              {friendlyDecision}
+            <div className="flex flex-wrap gap-3 items-center justify-center mb-6">
+              {/* Decision Badge */}
+              <div
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-bold shadow-lg transition-colors ${
+                  isAutoSend
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/5"
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-amber-500/5"
+                }`}
+              >
+                <UserCheck className="h-4 w-4 animate-pulse" />
+                <span className="text-xs opacity-75 font-semibold uppercase tracking-wider">Decision:</span>
+                <span>{friendlyDecision}</span>
+              </div>
+
+              {/* Confidence Badge */}
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-lg shadow-purple-500/5 text-sm font-bold transition-colors">
+                <span className="text-xs opacity-75 font-semibold uppercase tracking-wider">Confidence:</span>
+                <span>{confidence}%</span>
+              </div>
+
+              {/* Risk Level Badge */}
+              <div
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-bold shadow-lg transition-colors ${
+                  riskLevel === "Low"
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/5"
+                    : riskLevel === "Medium"
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-amber-500/5"
+                    : "bg-rose-500/10 border-rose-500/30 text-rose-400 shadow-rose-500/5"
+                }`}
+              >
+                <span className="text-xs opacity-75 font-semibold uppercase tracking-wider">Risk Level:</span>
+                <span>{riskLevel}</span>
+              </div>
             </div>
 
             <div className="max-w-md bg-white/5 border border-white/5 rounded-xl p-4 text-xs text-left">
