@@ -1,4 +1,4 @@
-from typing import TypedDict, List
+from typing import TypedDict, List, Dict
 
 class GraphState(TypedDict):
 
@@ -13,3 +13,5 @@ class GraphState(TypedDict):
     decision: str
 
     logs: List[str]
+
+    timings: Dict[str, float]

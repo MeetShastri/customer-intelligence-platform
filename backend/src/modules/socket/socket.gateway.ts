@@ -39,7 +39,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit, OnModul
         try {
           const data = JSON.parse(message);
           const { jobId } = data;
-          if (jobId) {
+          if (jobId && this.server) {
             this.server.to(jobId).emit('progress-update', data);
           }
         } catch (error) {

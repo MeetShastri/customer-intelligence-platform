@@ -78,15 +78,15 @@ export class WorkflowWorker implements OnModuleInit, OnModuleDestroy {
                   if (event.classify_agent) {
                     const data = event.classify_agent;
                     currentLogs = [...currentLogs, ...data.logs];
-                    await emitProgress('classification', 35, currentLogs, { urgency: data.urgency });
+                    await emitProgress('classification', 35, currentLogs, { urgency: data.urgency, timings: data.timings });
                   } else if (event.retrieval_agent) {
                     const data = event.retrieval_agent;
                     currentLogs = [...currentLogs, ...data.logs];
-                    await emitProgress('retrieval', 60, currentLogs, { retrieved_context: data.retrieved_context });
+                    await emitProgress('retrieval', 60, currentLogs, { retrieved_context: data.retrieved_context, timings: data.timings });
                   } else if (event.draft_agent) {
                     const data = event.draft_agent;
                     currentLogs = [...currentLogs, ...data.logs];
-                    await emitProgress('drafting', 80, currentLogs, { draft_reply: data.draft_reply });
+                    await emitProgress('drafting', 80, currentLogs, { draft_reply: data.draft_reply, timings: data.timings });
                   } else if (event.supervisor_agent) {
                     const data = event.supervisor_agent;
                     currentLogs = [...currentLogs, ...data.logs];
@@ -96,6 +96,7 @@ export class WorkflowWorker implements OnModuleInit, OnModuleDestroy {
                       draft_reply: data.draft_reply,
                       decision: data.decision,
                       logs: currentLogs,
+                      timings: data.timings,
                     });
                     resolve({
                       ticket: job.data.ticket,
@@ -104,6 +105,7 @@ export class WorkflowWorker implements OnModuleInit, OnModuleDestroy {
                       draft_reply: data.draft_reply,
                       decision: data.decision,
                       logs: currentLogs,
+                      timings: data.timings,
                     });
                   }
                 } catch (e) {

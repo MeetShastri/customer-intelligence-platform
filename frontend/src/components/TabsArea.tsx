@@ -18,15 +18,17 @@ interface TabsAreaProps {
   rawJson: any;
 }
 
-type TabKey = "draft" | "supervisor";
+type TabKey = "retrieval" | "draft" | "supervisor" | "developer";
 
-export default function TabsArea({ result }: TabsAreaProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>("draft");
+export default function TabsArea({ result, rawJson }: TabsAreaProps) {
+  const [activeTab, setActiveTab] = useState<TabKey>("retrieval");
   const [copied, setCopied] = useState(false);
 
   const tabs = [
+    { key: "retrieval", label: "Retrieved Context", icon: <Database className="h-4 w-4" /> },
     { key: "draft", label: "Draft Reply", icon: <FileText className="h-4 w-4" /> },
     { key: "supervisor", label: "Supervisor Decision", icon: <UserCheck className="h-4 w-4" /> },
+    { key: "developer", label: "Developer View", icon: <Terminal className="h-4 w-4" /> },
   ] as const;
 
   const handleCopy = () => {
@@ -47,6 +49,46 @@ export default function TabsArea({ result }: TabsAreaProps) {
     }
 
     switch (activeTab) {
+      case "retrieval":
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            {result.retrieved_context && result.retrieved_context.length > 0 ? (
+              result.retrieved_context.map((match, idx) => (
+                <div
+                  key={idx}
+                  className="flex flex-col bg-white/5 border border-white/5 rounded-xl p-4 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 px-3 py-1 bg-purple-500/10 text-purple-400 text-[10px] font-bold border-l border-b border-white/5 rounded-bl-lg">
+                    {match.score ? `${(match.score * 100).toFixed(1)}% Match` : "Similarity Match"}
+                  </div>
+
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Historical Case {idx + 1}
+                  </span>
+
+                  <div className="mb-3 text-left">
+                    <h4 className="text-xs font-bold text-gray-300 mb-1">Issue:</h4>
+                    <p className="text-xs text-gray-400 max-h-24 overflow-y-auto bg-black/20 p-2 rounded-lg">{match.issue}</p>
+                  </div>
+
+                  <div className="text-left">
+                    <h4 className="text-xs font-bold text-gray-300 mb-1">Resolution:</h4>
+                    <p className="text-xs text-emerald-400/90 max-h-32 overflow-y-auto bg-emerald-500/5 p-2 rounded-lg">{match.resolution}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-2 text-center text-xs text-gray-500 py-6">
+                No similar historical cases retrieved.
+              </div>
+            )}
+          </motion.div>
+        );
+
       case "draft":
         return (
           <motion.div
@@ -104,6 +146,17 @@ export default function TabsArea({ result }: TabsAreaProps) {
                   : "The ticket is classified with HIGH urgency or does not match suitable historical cases. Escalated for human review (Human Review)."}
               </p>
             </div>
+          </motion.div>
+        );
+
+      case "developer":
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-[#0b0f19] border border-white/5 rounded-xl p-4 font-mono text-[11px] text-left overflow-x-auto select-text max-h-[350px]"
+          >
+            <pre className="text-sky-400">{JSON.stringify(rawJson, null, 2)}</pre>
           </motion.div>
         );
     }

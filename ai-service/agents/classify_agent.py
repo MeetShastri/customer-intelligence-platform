@@ -1,6 +1,10 @@
+import time
 from graph.state import GraphState
 
 async def classify_agent(state: GraphState):
+    start_time = time.perf_counter()
+    if "timings" not in state or state["timings"] is None:
+        state["timings"] = {}
 
     ticket = state["ticket"]
 
@@ -23,5 +27,8 @@ async def classify_agent(state: GraphState):
     state["logs"].append(
         f"Ticket classified as {urgency}"
     )
+
+    duration = time.perf_counter() - start_time
+    state["timings"]["classify"] = max(round(duration, 2), 0.01)
 
     return state

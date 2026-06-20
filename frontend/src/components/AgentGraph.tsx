@@ -1,19 +1,30 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Check, Cpu, FileText, Database, ShieldAlert, ArrowDown } from "lucide-react";
+import { ReactFlow, Background, Handle, Position } from "@xyflow/react";
+import { Check, ShieldAlert, Database, FileText, Cpu, ArrowDown } from "lucide-react";
+import "@xyflow/react/dist/style.css";
 
 interface AgentGraphProps {
   currentStep: string | null;
+  timings?: {
+    classify?: number;
+    retrieval?: number;
+    draft?: number;
+    supervisor?: number;
+    total?: number;
+  } | null;
 }
 
-interface NodeProps {
-  id: string;
-  label: string;
-  sublabel: string;
-  icon: React.ReactNode;
-  status: "pending" | "active" | "complete";
-}
+const iconMap = {
+  classify: <ShieldAlert className="h-5 w-5" />,
+  retrieval: <Database className="h-5 w-5" />,
+  draft: <FileText className="h-5 w-5" />,
+  supervisor: <Cpu className="h-5 w-5" />,
+};
 
-function AgentNode({ label, sublabel, icon, status }: NodeProps) {
+function CustomAgentNode({ data }: { data: any }) {
+  const { label, sublabel, status, duration, iconKey } = data;
+
   const getStatusStyles = () => {
     switch (status) {
       case "active":
@@ -38,10 +49,13 @@ function AgentNode({ label, sublabel, icon, status }: NodeProps) {
   };
 
   const styles = getStatusStyles();
+  const icon = iconMap[iconKey as keyof typeof iconMap];
 
   return (
-    <div className="relative w-full max-w-sm">
+    <div className="relative w-[340px] select-none text-left">
       {styles.glow && <div className={styles.glow} />}
+      
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
       
       <div
         className={`flex items-center gap-4 p-4 rounded-xl border backdrop-blur-md transition-all duration-500 ${styles.card}`}
@@ -49,25 +63,37 @@ function AgentNode({ label, sublabel, icon, status }: NodeProps) {
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-sm transition-colors duration-500 ${styles.iconContainer}`}>
           {status === "complete" ? <Check className="h-5 w-5" /> : icon}
         </div>
-        <div className="text-left">
+        <div className="text-left flex-grow mr-2">
           <div className={`text-sm font-bold transition-colors duration-500 ${status === "active" ? "text-purple-300" : status === "complete" ? "text-emerald-400" : "text-gray-400"}`}>
             {label}
           </div>
-          <div className="text-xs text-gray-500 mt-0.5">{sublabel}</div>
+          <div className="text-[11px] text-gray-500 mt-0.5">{sublabel}</div>
         </div>
 
+        {status === "complete" && duration !== undefined && (
+          <span className="ml-auto text-xs font-mono font-semibold text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shrink-0">
+            {duration.toFixed(2)}s
+          </span>
+        )}
+
         {status === "active" && (
-          <div className="ml-auto flex h-2 w-2 relative">
+          <div className="ml-auto flex h-2 w-2 relative shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
           </div>
         )}
       </div>
+
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }
 
-export default function AgentGraph({ currentStep }: AgentGraphProps) {
+const nodeTypes = {
+  agentNode: CustomAgentNode,
+};
+
+export default function AgentGraph({ currentStep, timings }: AgentGraphProps) {
   // Helper to determine node status
   const getStatus = (nodeKey: string): "pending" | "active" | "complete" => {
     if (!currentStep) return "pending";
@@ -92,7 +118,6 @@ export default function AgentGraph({ currentStep }: AgentGraphProps) {
 
     if (nodeKey === "supervisor") {
       if (currentStep === "completed") return "complete";
-      // It's active during final phase
       if (currentIdx === stepOrder.indexOf("drafting") + 1) return "active"; 
     }
 
@@ -104,150 +129,217 @@ export default function AgentGraph({ currentStep }: AgentGraphProps) {
   const draftStatus = getStatus("draft");
   const supervisorStatus = getStatus("supervisor");
 
+  // Dynamically compute nodes based on current status and timings
+  const nodes = useMemo(() => {
+    return [
+      {
+        id: "classify",
+        type: "agentNode",
+        position: { x: 10, y: 10 },
+        data: {
+          label: "Classify Agent",
+          sublabel: "Urgency & category classification",
+          status: classifyStatus,
+          duration: timings?.classify,
+          iconKey: "classify",
+        },
+      },
+      {
+        id: "retrieval",
+        type: "agentNode",
+        position: { x: 10, y: 130 },
+        data: {
+          label: "Retrieval Agent",
+          sublabel: "Contextual similarity search in Pinecone",
+          status: retrievalStatus,
+          duration: timings?.retrieval,
+          iconKey: "retrieval",
+        },
+      },
+      {
+        id: "draft",
+        type: "agentNode",
+        position: { x: 10, y: 250 },
+        data: {
+          label: "Draft Agent",
+          sublabel: "Draft response generation via Groq",
+          status: draftStatus,
+          duration: timings?.draft,
+          iconKey: "draft",
+        },
+      },
+      {
+        id: "supervisor",
+        type: "agentNode",
+        position: { x: 10, y: 370 },
+        data: {
+          label: "Supervisor Agent",
+          sublabel: "Final decision routing review",
+          status: supervisorStatus,
+          duration: timings?.supervisor,
+          iconKey: "supervisor",
+        },
+      },
+    ];
+  }, [classifyStatus, retrievalStatus, draftStatus, supervisorStatus, timings]);
+
+  // Dynamically compute edges style and animation
+  const edges = useMemo(() => {
+    return [
+      {
+        id: "e-classify-retrieval",
+        source: "classify",
+        target: "retrieval",
+        animated: classifyStatus === "complete" || retrievalStatus === "active",
+        style: {
+          stroke: retrievalStatus === "active" 
+            ? "#a855f7" 
+            : classifyStatus === "complete" 
+            ? "#10b981" 
+            : "rgba(255,255,255,0.08)",
+          strokeWidth: 2,
+        },
+      },
+      {
+        id: "e-retrieval-draft",
+        source: "retrieval",
+        target: "draft",
+        animated: retrievalStatus === "complete" || draftStatus === "active",
+        style: {
+          stroke: draftStatus === "active" 
+            ? "#a855f7" 
+            : retrievalStatus === "complete" 
+            ? "#10b981" 
+            : "rgba(255,255,255,0.08)",
+          strokeWidth: 2,
+        },
+      },
+      {
+        id: "e-draft-supervisor",
+        source: "draft",
+        target: "supervisor",
+        animated: draftStatus === "complete" || supervisorStatus === "active" || supervisorStatus === "complete",
+        style: {
+          stroke: supervisorStatus === "active" 
+            ? "#a855f7" 
+            : draftStatus === "complete" 
+            ? "#10b981" 
+            : "rgba(255,255,255,0.08)",
+          strokeWidth: 2,
+        },
+      },
+    ];
+  }, [classifyStatus, retrievalStatus, draftStatus, supervisorStatus]);
+
   return (
     <div className="glass-panel rounded-2xl p-6 shadow-2xl flex flex-col items-center h-full z-10 relative overflow-hidden">
       <style>{`
-        @keyframes flow {
-          to {
-            stroke-dashoffset: -20;
-          }
+        .react-flow__renderer {
+          background-color: transparent !important;
         }
-        .animate-flow-active {
-          stroke-dasharray: 6, 4;
-          animation: flow 1.5s linear infinite;
+        .react-flow__edge-path {
+          transition: stroke 0.5s ease, stroke-width 0.5s ease;
+        }
+        .react-flow__handle {
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+        .react-flow__attribution {
+          display: none !important;
         }
       `}</style>
       <div className="absolute top-0 right-0 h-[2px] w-24 bg-gradient-to-r from-purple-500/10 via-purple-500/60 to-purple-500/10"></div>
 
-      <h2 className="text-lg font-bold text-gray-100 self-start flex items-center gap-2 mb-8">
+      <h2 className="text-lg font-bold text-gray-100 self-start flex items-center gap-2 mb-4">
         <Cpu className="h-4 w-4 text-purple-400" />
         Real-Time Agent Execution Graph
       </h2>
 
-      <div className="flex flex-col items-center w-full gap-8 relative py-4">
-        {/* Node 1 */}
-        <AgentNode
-          id="classify"
-          label="Classify Agent"
-          sublabel="Urgency & category classification"
-          icon={<ShieldAlert className="h-5 w-5" />}
-          status={classifyStatus}
-        />
-
-        {/* Connection Line 1 */}
-        <div className="h-8 flex items-center justify-center relative">
-          <svg className="absolute w-2 h-12 overflow-visible" pointerEvents="none">
-            <line
-              x1="4"
-              y1="0"
-              x2="4"
-              y2="48"
-              className={`stroke-white/10 stroke-[2]`}
-            />
-            {(classifyStatus === "complete" || retrievalStatus === "active") && (
-              <line
-                x1="4"
-                y1="0"
-                x2="4"
-                y2="48"
-                className={`stroke-[2] ${
-                  retrievalStatus === "active"
-                    ? "stroke-purple-500 animate-flow-active"
-                    : "stroke-emerald-500"
-                }`}
-              />
-            )}
-          </svg>
-          <ArrowDown className={`h-4 w-4 relative z-10 transition-colors ${
-            retrievalStatus === "active" ? "text-purple-400" : classifyStatus === "complete" ? "text-emerald-500" : "text-gray-600"
-          }`} />
-        </div>
-
-        {/* Node 2 */}
-        <AgentNode
-          id="retrieval"
-          label="Retrieval Agent"
-          sublabel="Contextual similarity search in Pinecone"
-          icon={<Database className="h-5 w-5" />}
-          status={retrievalStatus}
-        />
-
-        {/* Connection Line 2 */}
-        <div className="h-8 flex items-center justify-center relative">
-          <svg className="absolute w-2 h-12 overflow-visible" pointerEvents="none">
-            <line
-              x1="4"
-              y1="0"
-              x2="4"
-              y2="48"
-              className={`stroke-white/10 stroke-[2]`}
-            />
-            {(retrievalStatus === "complete" || draftStatus === "active") && (
-              <line
-                x1="4"
-                y1="0"
-                x2="4"
-                y2="48"
-                className={`stroke-[2] ${
-                  draftStatus === "active"
-                    ? "stroke-purple-500 animate-flow-active"
-                    : "stroke-emerald-500"
-                }`}
-              />
-            )}
-          </svg>
-          <ArrowDown className={`h-4 w-4 relative z-10 transition-colors ${
-            draftStatus === "active" ? "text-purple-400" : retrievalStatus === "complete" ? "text-emerald-500" : "text-gray-600"
-          }`} />
-        </div>
-
-        {/* Node 3 */}
-        <AgentNode
-          id="draft"
-          label="Draft Agent"
-          sublabel="Draft response generation via Groq"
-          icon={<FileText className="h-5 w-5" />}
-          status={draftStatus}
-        />
-
-        {/* Connection Line 3 */}
-        <div className="h-8 flex items-center justify-center relative">
-          <svg className="absolute w-2 h-12 overflow-visible" pointerEvents="none">
-            <line
-              x1="4"
-              y1="0"
-              x2="4"
-              y2="48"
-              className={`stroke-white/10 stroke-[2]`}
-            />
-            {(draftStatus === "complete" || supervisorStatus === "active" || supervisorStatus === "complete") && (
-              <line
-                x1="4"
-                y1="0"
-                x2="4"
-                y2="48"
-                className={`stroke-[2] ${
-                  supervisorStatus === "active"
-                    ? "stroke-purple-500 animate-flow-active"
-                    : "stroke-emerald-500"
-                }`}
-              />
-            )}
-          </svg>
-          <ArrowDown className={`h-4 w-4 relative z-10 transition-colors ${
-            supervisorStatus === "active" ? "text-purple-400" : draftStatus === "complete" ? "text-emerald-500" : "text-gray-600"
-          }`} />
-        </div>
-
-        {/* Node 4 */}
-        <AgentNode
-          id="supervisor"
-          label="Supervisor Agent"
-          sublabel="Final decision routing review"
-          icon={<Cpu className="h-5 w-5" />}
-          status={supervisorStatus}
-        />
+      {/* React Flow Container */}
+      <div className="w-full h-[450px] relative flex-grow">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          zoomOnScroll={false}
+          zoomOnPinch={false}
+          zoomOnDoubleClick={false}
+          panOnDrag={false}
+          panOnScroll={false}
+          fitView
+          fitViewOptions={{ padding: 0.05 }}
+        >
+          <Background color="rgba(255,255,255,0.03)" gap={20} size={1} />
+        </ReactFlow>
       </div>
+
+      {/* Execution Timings Panel */}
+      {timings && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full mt-6 pt-6 border-t border-white/5 flex flex-col gap-3"
+        >
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider text-left mb-1">
+            Execution Timings
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-left">
+            {timings.classify !== undefined && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
+                <span className="text-gray-400 flex items-center gap-1.5">
+                  <span className="text-emerald-500">✓</span> Classify Agent
+                </span>
+                <span className="font-mono text-purple-300 font-bold">{timings.classify.toFixed(2)}s</span>
+              </div>
+            )}
+            {timings.retrieval !== undefined && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
+                <span className="text-gray-400 flex items-center gap-1.5">
+                  <span className="text-emerald-500">✓</span> Retrieval Agent
+                </span>
+                <span className="font-mono text-purple-300 font-bold">{timings.retrieval.toFixed(2)}s</span>
+              </div>
+            )}
+            {timings.draft !== undefined && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
+                <span className="text-gray-400 flex items-center gap-1.5">
+                  <span className="text-emerald-500">✓</span> Draft Agent
+                </span>
+                <span className="font-mono text-purple-300 font-bold">{timings.draft.toFixed(2)}s</span>
+              </div>
+            )}
+            {timings.supervisor !== undefined && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
+                <span className="text-gray-400 flex items-center gap-1.5">
+                  <span className="text-emerald-500">✓</span> Supervisor Agent
+                </span>
+                <span className="font-mono text-purple-300 font-bold">{timings.supervisor.toFixed(2)}s</span>
+              </div>
+            )}
+          </div>
+
+          {timings.total !== undefined && (
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between"
+            >
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Total Runtime</span>
+                <span className="text-[11px] text-gray-400 mt-0.5">Workflow execution completed</span>
+              </div>
+              <div className="text-right">
+                <span className="text-lg font-mono font-black text-purple-300 glow-purple">
+                  {timings.total.toFixed(2)}s
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 }

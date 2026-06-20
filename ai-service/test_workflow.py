@@ -10,7 +10,8 @@ async def main():
         "retrieved_context": [],
         "draft_reply": "",
         "decision": "",
-        "logs": []
+        "logs": [],
+        "timings": {}
     })
 
     print(result)

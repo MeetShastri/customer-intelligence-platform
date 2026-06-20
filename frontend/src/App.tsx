@@ -9,6 +9,7 @@ import AgentGraph from "./components/AgentGraph";
 import Timeline from "./components/Timeline";
 import TabsArea from "./components/TabsArea";
 import Login from "./components/Login";
+import MetricsCards from "./components/MetricsCards";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
@@ -23,6 +24,13 @@ interface WorkflowResult {
     priority?: string;
   }>;
   logs: string[];
+  timings?: {
+    classify?: number;
+    retrieval?: number;
+    draft?: number;
+    supervisor?: number;
+    total?: number;
+  };
 }
 
 export default function App() {
@@ -33,6 +41,23 @@ export default function App() {
   const [logs, setLogs] = useState<string[]>([]);
   const [result, setResult] = useState<WorkflowResult | null>(null);
   const [rawJson, setRawJson] = useState<any>(null);
+  const [timings, setTimings] = useState<WorkflowResult["timings"] | null>(null);
+  const [metrics, setMetrics] = useState(() => {
+    try {
+      const saved = localStorage.getItem("cip-workflow-metrics");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return {
+      ticketsProcessed: 0,
+      autoSent: 0,
+      humanReview: 0,
+      totalRuntime: 0
+    };
+  });
 
   useEffect(() => {
     socket.on("progress-update", (data: any) => {
@@ -47,12 +72,36 @@ export default function App() {
       if (data.logs) {
         setLogs(data.logs);
       }
+      if (data.result && data.result.timings) {
+        setTimings((prev) => ({
+          ...prev,
+          ...data.result.timings
+        }));
+      }
 
       // Handle final output
       if (data.step === "completed" && data.result) {
         setResult(data.result);
         setRawJson(data);
         setLoading(false);
+
+        // Update metrics
+        setMetrics((prev: any) => {
+          const isAutoSend = data.result.decision === "AUTO_SEND";
+          const runtime = data.result.timings?.total || 0;
+          const nextMetrics = {
+            ticketsProcessed: prev.ticketsProcessed + 1,
+            autoSent: prev.autoSent + (isAutoSend ? 1 : 0),
+            humanReview: prev.humanReview + (isAutoSend ? 0 : 1),
+            totalRuntime: prev.totalRuntime + runtime
+          };
+          try {
+            localStorage.setItem("cip-workflow-metrics", JSON.stringify(nextMetrics));
+          } catch (e) {
+            console.error(e);
+          }
+          return nextMetrics;
+        });
       } else if (data.step === "failed") {
         setLoading(false);
         setLogs((prev) => [...prev, "Workflow execution failed."]);
@@ -71,6 +120,7 @@ export default function App() {
     setLogs(["Ticket submission queued in Redis..."]);
     setResult(null);
     setRawJson(null);
+    setTimings(null);
 
     try {
       const response = await axios.post(`${BACKEND_URL}/workflow/run`, {
@@ -98,13 +148,15 @@ export default function App() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#030712] overflow-x-hidden select-none">
+    <div className="relative min-h-screen bg-[#030712] overflow-x-hidden">
       {/* Background decoration grid / particles */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,58,237,0.06),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(59,130,246,0.04),transparent_50%)] pointer-events-none z-0"></div>
       <ParticleBackground />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-screen">
         <Header />
+
+        <MetricsCards metrics={metrics} />
 
         {/* Dashboard Panels Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 flex-grow items-stretch">
@@ -119,7 +171,7 @@ export default function App() {
 
           {/* Center Panel - Real-time execution graph */}
           <div className="lg:col-span-4 h-full">
-            <AgentGraph currentStep={currentStep} />
+            <AgentGraph currentStep={currentStep} timings={timings} />
           </div>
 
           {/* Right Panel - Live logs timeline */}

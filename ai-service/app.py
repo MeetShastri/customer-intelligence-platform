@@ -34,7 +34,8 @@ async def run_workflow(payload: dict):
         "retrieved_context": [],
         "draft_reply": "",
         "decision": "",
-        "logs": []
+        "logs": [],
+        "timings": {}
     })
 
     return result
@@ -48,7 +49,8 @@ async def run_workflow_stream(payload: dict):
             "retrieved_context": [],
             "draft_reply": "",
             "decision": "",
-            "logs": []
+            "logs": [],
+            "timings": {}
         }
         async for chunk in graph.astream(initial_state):
             yield json.dumps(chunk) + "\n"

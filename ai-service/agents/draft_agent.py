@@ -1,7 +1,11 @@
+import time
 from graph.state import GraphState
 from services.llm_service import llm
 
 async def draft_agent(state: GraphState):
+    start_time = time.perf_counter()
+    if "timings" not in state or state["timings"] is None:
+        state["timings"] = {}
 
     ticket = state["ticket"]
 
@@ -45,5 +49,8 @@ async def draft_agent(state: GraphState):
     state["logs"].append(
         "Draft response generated"
     )
+
+    duration = time.perf_counter() - start_time
+    state["timings"]["draft"] = max(round(duration, 2), 0.01)
 
     return state
