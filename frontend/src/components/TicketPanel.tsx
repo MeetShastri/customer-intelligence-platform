@@ -5,6 +5,7 @@ interface TicketPanelProps {
   onSubmit: (ticketText: string) => void;
   loading: boolean;
   currentStep: string | null;
+  queueStatus: string | null;
 }
 
 const presets = [
@@ -22,7 +23,7 @@ const presets = [
   },
 ];
 
-export default function TicketPanel({ onSubmit, loading, currentStep }: TicketPanelProps) {
+export default function TicketPanel({ onSubmit, loading, currentStep, queueStatus }: TicketPanelProps) {
   const [text, setText] = useState(presets[0].text);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,18 +88,46 @@ export default function TicketPanel({ onSubmit, loading, currentStep }: TicketPa
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading || !text.trim()}
-          className={`mt-auto flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${
-            loading || !text.trim()
-              ? "bg-gray-800 text-gray-500 cursor-not-allowed shadow-none border border-white/5"
-              : "bg-purple-600 hover:bg-purple-500 cursor-pointer shadow-purple-500/15"
-          }`}
-        >
-          <Send className={`h-4 w-4 ${loading ? "animate-bounce" : ""}`} />
-          {getButtonText()}
-        </button>
+        <div className="mt-auto">
+          {queueStatus && (
+            <div className="flex items-center justify-end gap-1.5 text-xs text-gray-400 mb-2 px-1">
+              <span className="text-[11px] text-gray-500 font-medium">Queue Status:</span>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide uppercase ${
+                queueStatus === "Queued"
+                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                  : queueStatus === "Running"
+                  ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                  : queueStatus === "Completed"
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                  : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  queueStatus === "Queued"
+                    ? "bg-amber-400 animate-pulse"
+                    : queueStatus === "Running"
+                    ? "bg-blue-400 animate-pulse"
+                    : queueStatus === "Completed"
+                    ? "bg-emerald-400"
+                    : "bg-rose-400"
+                }`} />
+                {queueStatus}
+              </span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !text.trim()}
+            className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all ${
+              loading || !text.trim()
+                ? "bg-gray-800 text-gray-500 cursor-not-allowed shadow-none border border-white/5"
+                : "bg-purple-600 hover:bg-purple-500 cursor-pointer shadow-purple-500/15"
+            }`}
+          >
+            <Send className={`h-4 w-4 ${loading ? "animate-bounce" : ""}`} />
+            {getButtonText()}
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -27,4 +27,8 @@ export class WorkflowService {
   };
 }
 
+  async getJobStatus(jobId: string) {
+    return this.queueService.getJobStatus(jobId);
+  }
+
 }

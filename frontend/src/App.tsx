@@ -35,8 +35,22 @@ interface WorkflowResult {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState<string | null>(null);
+  const [loading, setLoading] = useState(() => {
+    const status = localStorage.getItem("cip-workflow-queue-status");
+    return status === "Queued" || status === "Running";
+  });
+  const [jobId, setJobId] = useState<string | null>(() => {
+    return localStorage.getItem("cip-workflow-job-id") || null;
+  });
+  const [queueStatus, setQueueStatus] = useState<string | null>(() => {
+    return localStorage.getItem("cip-workflow-queue-status") || null;
+  });
+  const [currentStep, setCurrentStep] = useState<string | null>(() => {
+    const status = localStorage.getItem("cip-workflow-queue-status");
+    if (status === "Queued") return "queued";
+    if (status === "Running") return "starting";
+    return null;
+  });
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [result, setResult] = useState<WorkflowResult | null>(null);
@@ -68,6 +82,21 @@ export default function App() {
       }
       if (data.step) {
         setCurrentStep(data.step);
+        if (data.step === "completed") {
+          setQueueStatus("Completed");
+          localStorage.setItem("cip-workflow-queue-status", "Completed");
+        } else if (data.step === "failed") {
+          setQueueStatus("Failed");
+          localStorage.setItem("cip-workflow-queue-status", "Failed");
+        } else if (
+          data.step === "starting" ||
+          data.step === "classification" ||
+          data.step === "retrieval" ||
+          data.step === "drafting"
+        ) {
+          setQueueStatus("Running");
+          localStorage.setItem("cip-workflow-queue-status", "Running");
+        }
       }
       if (data.logs) {
         setLogs(data.logs);
@@ -113,10 +142,72 @@ export default function App() {
     };
   }, []);
 
+  // Poll & sync queue status from BullMQ backend via jobId
+  useEffect(() => {
+    if (!jobId) return;
+
+    // Join socket room for this jobId on load/refresh
+    socket.emit("join", jobId);
+
+    let active = true;
+    let pollInterval: any;
+
+    const checkStatus = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_URL}/workflow/status/${jobId}`);
+        const status = res.data.status;
+        if (!active) return;
+
+        if (status) {
+          let nextStatus: string | null = null;
+          if (status === "waiting" || status === "delayed" || status === "prioritized") {
+            nextStatus = "Queued";
+          } else if (status === "active") {
+            nextStatus = "Running";
+          } else if (status === "completed") {
+            nextStatus = "Completed";
+          } else if (status === "failed") {
+            nextStatus = "Failed";
+          }
+
+          if (nextStatus) {
+            setQueueStatus(nextStatus);
+            localStorage.setItem("cip-workflow-queue-status", nextStatus);
+            
+            // If terminal state, clear interval and set loading false
+            if (nextStatus === "Completed" || nextStatus === "Failed") {
+              setLoading(false);
+              if (pollInterval) clearInterval(pollInterval);
+            } else {
+              setLoading(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching job status:", err);
+      }
+    };
+
+    // Check status immediately
+    checkStatus();
+
+    // Poll status every 2 seconds if not completed/failed
+    if (queueStatus !== "Completed" && queueStatus !== "Failed") {
+      pollInterval = setInterval(checkStatus, 2000);
+    }
+
+    return () => {
+      active = false;
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [jobId, queueStatus]);
+
   const handleTicketSubmit = async (ticketText: string) => {
     setLoading(true);
     setProgress(0);
     setCurrentStep("queued");
+    setQueueStatus("Queued");
+    localStorage.setItem("cip-workflow-queue-status", "Queued");
     setLogs(["Ticket submission queued in Redis..."]);
     setResult(null);
     setRawJson(null);
@@ -128,6 +219,8 @@ export default function App() {
       });
 
       const { jobId } = response.data;
+      localStorage.setItem("cip-workflow-job-id", jobId);
+      setJobId(jobId);
       setLogs((prev) => [
         ...prev,
         `Job assigned ID: ${jobId}`,
@@ -140,6 +233,8 @@ export default function App() {
       console.error("Error submitting ticket:", error);
       setLogs((prev) => [...prev, `Failed to enqueue job: ${error.message}`]);
       setLoading(false);
+      setQueueStatus("Failed");
+      localStorage.setItem("cip-workflow-queue-status", "Failed");
     }
   };
 
@@ -166,6 +261,7 @@ export default function App() {
               onSubmit={handleTicketSubmit}
               loading={loading}
               currentStep={currentStep}
+              queueStatus={queueStatus}
             />
           </div>
 

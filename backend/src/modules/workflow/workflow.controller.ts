@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Get,
+  Param,
   Post,
 } from '@nestjs/common';
 
@@ -19,5 +21,11 @@ export class WorkflowController {
     return this.workflowService.runWorkflow(
       body.ticket,
     );
+  }
+
+  @Get('status/:jobId')
+  async getStatus(@Param('jobId') jobId: string) {
+    const status = await this.workflowService.getJobStatus(jobId);
+    return { jobId, status };
   }
 }

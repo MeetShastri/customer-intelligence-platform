@@ -38,4 +38,15 @@ export class QueueService {
       },
     );
   }
+
+  async getJobStatus(jobId: string): Promise<string | null> {
+    try {
+      const job = await this.workflowQueue.getJob(jobId);
+      if (!job) return null;
+      return await job.getState();
+    } catch (error) {
+      console.error(`Error getting status for job ${jobId}:`, error);
+      return null;
+    }
+  }
 }
