@@ -133,7 +133,7 @@ redis-cli ping
    ```bash
    cp .env.example .env
    ```
-   *Required variables*: `PORT=3000`, `REDIS_HOST=localhost`, `REDIS_PORT=6379`, `AI_SERVICE_URL=http://localhost:8000`, and `START_WORKER=true`.
+   *Required variables*: `PORT=3000`, `REDIS_URL` (connection URL, e.g. Upstash secure Redis URL) or fallbacks `REDIS_HOST=localhost` and `REDIS_PORT=6379`, `AI_SERVICE_URL=http://localhost:8000`, and `START_WORKER=true`.
 4. Compile the application and start the web gateway:
    ```bash
    npm run build
@@ -200,3 +200,8 @@ We have rolled out several premium updates to improve visibility, usability, and
 
 6. **Agent Execution Pace Tuning**:
    * Added a 1.5-second delay to each agent step (`classify`, `retrieval`, `draft`, `supervisor`) in the python `ai-service` to allow observers to follow graph animations and terminal logs step-by-step.
+
+7. **Upstash Redis Integration**:
+   - Seamless support for secure remote Redis instances (like Upstash) via the `REDIS_URL` environment variable.
+   - Built-in URL sanitization to strip console command prefixes (like `redis-cli --tls -u ...`), auto-detecting TLS requirements and configuring secure connections seamlessly.
+   - Clean implementation of BullMQ connection sharing to avoid nested Node module compiler conflicts.

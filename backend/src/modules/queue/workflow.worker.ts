@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Worker } from 'bullmq';
 import axios from 'axios';
 import Redis from 'ioredis';
+import { URL } from 'url';
 
 @Injectable()
 export class WorkflowWorker implements OnModuleInit, OnModuleDestroy {
@@ -20,14 +21,44 @@ export class WorkflowWorker implements OnModuleInit, OnModuleDestroy {
 
     const redisHost = this.configService.get<string>('REDIS_HOST') || 'localhost';
     const redisPort = this.configService.get<number>('REDIS_PORT') || 6379;
+    let redisUrl = this.configService.get<string>('REDIS_URL');
+
+    if (redisUrl) {
+      const match = redisUrl.match(/(rediss?:\/\/[^\s]+)/);
+      if (match) {
+        redisUrl = match[1];
+      }
+    }
+
     const aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL') || 'http://localhost:8000';
 
-    this.publisher = new Redis({
-      host: redisHost,
-      port: redisPort,
-    });
+    let workerConnectionOptions: any;
 
-    console.log(`Starting WorkflowWorker (Redis: ${redisHost}:${redisPort}, AI: ${aiServiceUrl})...`);
+    if (redisUrl) {
+      const parsed = new URL(redisUrl);
+      const isSecure = redisUrl.startsWith('rediss://') || redisUrl.includes('upstash');
+      this.publisher = new Redis(redisUrl, {
+        tls: isSecure ? { rejectUnauthorized: false } : undefined,
+      });
+      workerConnectionOptions = {
+        host: parsed.hostname,
+        port: Number(parsed.port) || 6379,
+        username: parsed.username ? decodeURIComponent(parsed.username) : undefined,
+        password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+        tls: isSecure ? { rejectUnauthorized: false } : undefined,
+      };
+    } else {
+      this.publisher = new Redis({
+        host: redisHost,
+        port: redisPort,
+      });
+      workerConnectionOptions = {
+        host: redisHost,
+        port: redisPort,
+      };
+    }
+
+    console.log(`Starting WorkflowWorker (Redis: ${redisUrl ? 'REDIS_URL' : redisHost + ':' + redisPort}, AI: ${aiServiceUrl})...`);
 
     this.worker = new Worker(
       'workflow-queue',
@@ -131,10 +162,7 @@ export class WorkflowWorker implements OnModuleInit, OnModuleDestroy {
         }
       },
       {
-        connection: {
-          host: redisHost,
-          port: redisPort,
-        },
+        connection: workerConnectionOptions,
       },
     );
   }

@@ -26,11 +26,26 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit, OnModul
   onModuleInit() {
     const redisHost = this.configService.get<string>('REDIS_HOST') || 'localhost';
     const redisPort = this.configService.get<number>('REDIS_PORT') || 6379;
+    let redisUrl = this.configService.get<string>('REDIS_URL');
 
-    this.subscriber = new Redis({
-      host: redisHost,
-      port: redisPort,
-    });
+    if (redisUrl) {
+      const match = redisUrl.match(/(rediss?:\/\/[^\s]+)/);
+      if (match) {
+        redisUrl = match[1];
+      }
+    }
+
+    if (redisUrl) {
+      const isSecure = redisUrl.startsWith('rediss://') || redisUrl.includes('upstash');
+      this.subscriber = new Redis(redisUrl, {
+        tls: isSecure ? { rejectUnauthorized: false } : undefined,
+      });
+    } else {
+      this.subscriber = new Redis({
+        host: redisHost,
+        port: redisPort,
+      });
+    }
 
     this.subscriber.subscribe('workflow-progress');
 
