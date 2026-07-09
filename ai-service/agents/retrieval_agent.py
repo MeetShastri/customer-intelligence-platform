@@ -12,9 +12,11 @@ RETRIEVAL_SYSTEM_PROMPT = """You are the Query Optimization Agent in an enterpri
 Your job is to optimize raw customer support tickets into clean, concise semantic search queries (1-5 words max) for Pinecone lookup.
 
 Instructions:
-1. Strip all conversational fluff, greetings ("Hello", "Please help"), and politeness.
+1. Strip all conversational fluff, greetings ("Hello", "Please help", "Thank you"), and politeness.
 2. Identify core technical entities, errors, systems, and actions (e.g., "login lockout", "double billing", "subscription cancellation").
-3. Do not output anything except the raw optimized query. No explanation, no quotes."""
+3. Perform query expansion if necessary. If the user mentions synonyms or colloquial phrases, map them to standard enterprise terminology (e.g. "can't get in" -> "login failure", "took my money twice" -> "double charge").
+4. Eliminate stop words (e.g., "the", "a", "an", "is", "of", "and", "my", "I").
+5. Do not output anything except the raw optimized query. No explanation, no quotes."""
 
 async def retrieval_agent(state: GraphState):
     start_time = time.perf_counter()
